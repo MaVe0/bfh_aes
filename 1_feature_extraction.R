@@ -3,22 +3,15 @@ rm(list=ls(all=TRUE))
 options(scipen=999)
 library(tidyverse)
 library(readxl)
-library(tidylog)
-library(irr)
 library(tidytext)
 library(purrr)
 library(stringr)
-library(quanteda)
 library(hunspell)
-library(ggplot2)
 library(GGally)
 library(caret)
-library(textplot)
 library(sjmisc)
-library(skimr)
 library(caret)
-library(broom)
-set.seed(1898)
+
 
 # repeat POS tagging?
 rePOS <- FALSE
@@ -73,31 +66,20 @@ data <- mutate(data,
                conv = ifelse(conv1 == 0, 1, conv1)
                ) %>%
   select(-ends_with("1"))
-# skim(data)
+
 
 # add ID
 data <- mutate(data, id = row_number()) %>%
   select(id, everything())
 
+# save labels/scores separately for criteria
+saveRDS(select(data, id, idea), "ideaScores.RDS")
+saveRDS(select(data, id, orga), "orgaScores.RDS")
+saveRDS(select(data, id, style), "styleScores.RDS")
+saveRDS(select(data, id, conv), "convScores.RDS")
+
+# with @Words
 dataR <- data
-# replace @words with valid word group [NOT SATISFYING ATM]
-# dataR <- mutate(data,
-#                essay = gsub(pattern = "\\@CAPS1", "Kevin", essay),
-#                essay = gsub(pattern = "\\@CAPS2", "Bob", essay),
-#                essay = gsub(pattern = "\\@CAPS3", "Cheyenne", essay),
-#                essay = gsub(pattern = "\\@CAPS\\w*", "Martin", essay),
-#                essay = gsub(pattern = "\\@PERSON1", "Lisa", essay),
-#                essay = gsub(pattern = "\\@PERSON2", "Sputim", essay),
-#                essay = gsub(pattern = "\\@PERSON3", "Mark", essay),
-#                essay = gsub(pattern = "\\@PERSON4", "Anna", essay),
-#                essay = gsub(pattern = "\\@ORGANIZATION\\w*", "organization", essay),
-#                essay = gsub(pattern = "\\@LOCATION\\w*", "downtown", essay),
-#                essay = gsub(pattern = "\\@DATE\\w*", "January 1st", essay),
-#                essay = gsub(pattern = "\\@TIME\\w*", "12PM", essay),
-#                essay = gsub(pattern = "\\@MONEY\\w*", "5$", essay),
-#                essay = gsub(pattern = "\\@PERCENT\\w*", "20%", essay),
-#                essay = gsub(pattern = "\\@NUM\\w*", "1898", essay)
-#                )
 
 # without @Words
 dataN <- mutate(data, essay = gsub(pattern = "\\@\\w*", "", essay)) # remove @words
@@ -220,7 +202,7 @@ nIncorrect <- spellCheck %>%
 # unnest(suggestions)
 
 # POS tagging ##########################################################################################################################
-if(rePos) {
+if(rePOS) {
   m_eng <- udpipe::udpipe_download_model(language = "english-ewt")
   m_eng <- udpipe::udpipe_load_model(m_eng)
 

@@ -1,7 +1,6 @@
 library(caret)
 library(corrplot)
 
-
 # get features and remove id
 features <- readRDS("features.RDS") %>%
   select(-id)
@@ -28,43 +27,5 @@ if(length(corFeatures) > 0) {
   print(corFeatures)
 }
 
-colnames(features)
-
-# transformation
-ideaPP <- preProcess(features,
-                     method = c("center", "scale", "YeoJohnson"))
-ideaPP
-ideaTrainT <- predict(ideaPP, newdata = features)
-summary(ideaTrainT)
-
-saveRDS("featuresPP.RDS")
-
-
-
-
-
-
-
-
-
-# get idea scores
-score <- readRDS("ideaScores.RDS")
-
-# Splitting (separate by criteria due to stratified split)
-trainIndex <- createDataPartition(score$idea, p = .7,
-                                  list = FALSE,
-                                  times = 1)
-
-idea <- features %>%
-  mutate(id = row_number()) %>%
-  left_join(score, by = "id") %>%
-  select(-id)
-
-ideaTrain <- idea[trainIndex,]
-ideaTest <- idea[-trainIndex,]
-
-
-
-
-
-
+# save preprocessed features
+saveRDS(features, "featuresPP.RDS")

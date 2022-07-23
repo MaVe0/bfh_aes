@@ -8,10 +8,8 @@ library(purrr)
 library(stringr)
 library(hunspell)
 library(GGally)
-library(caret)
 library(sjmisc)
 library(caret)
-
 
 # repeat POS tagging?
 rePOS <- FALSE
@@ -73,10 +71,10 @@ data <- mutate(data, id = row_number()) %>%
   select(id, everything())
 
 # save labels/scores separately for criteria
-saveRDS(select(data, id, idea), "ideaScores.RDS")
-saveRDS(select(data, id, orga), "orgaScores.RDS")
-saveRDS(select(data, id, style), "styleScores.RDS")
-saveRDS(select(data, id, conv), "convScores.RDS")
+saveRDS(select(data, id, idea) %>% mutate(idea = factor(idea)), "ideaScores.RDS")
+saveRDS(select(data, id, orga) %>% mutate(orga = factor(orga)), "orgaScores.RDS")
+saveRDS(select(data, id, style) %>% mutate(style = factor(style)), "styleScores.RDS")
+saveRDS(select(data, id, conv) %>% mutate(conv = factor(conv)), "convScores.RDS")
 
 # with @Words
 dataR <- data
@@ -104,10 +102,10 @@ wordsN <- unnest_tokens(select(dataN, id, essay),
 # number of words (total and unique; with @words)
 nWord <- wordsR %>%
   group_by(id) %>%
-  mutate(nWords = n()) %>%
+  mutate(nWord = n()) %>%
   unique() %>%
-  mutate(nWordsUnq = n()) %>%
-  select(id, nWords, nWordsUnq) %>%
+  mutate(nWordUnq = n()) %>%
+  select(id, nWord, nWordUnq) %>%
   unique()
 
 # without @words: number of words, average word length, number of characters, % of short words, % of long words
@@ -118,11 +116,12 @@ characters <- wordsN %>%
          shortWord = tile20 == 1,
          longWord = tile20 == 20) %>%
   group_by(id) %>%
-  summarise(nWord = n(),
+  summarise(nWordN = n(),
             nCharWord = round(mean(wordLength), 2),
             nCharTotal = sum(nChar),
-            pShortWord = round(100*sum(shortWord)/nWord, 2),
-            pLongWord = round(sum(100*longWord)/nWord, 2))
+            pShortWord = round(100*sum(shortWord)/nWordN, 2),
+            pLongWord = round(sum(100*longWord)/nWordN, 2)
+            )
 
 # number of sentences, number of characters per sentence, & of long and short sentences => JOIN TO FEATURES
 sentences <- unnest_tokens(select(dataN, id, essay),
@@ -158,7 +157,7 @@ nWordNSunq <- wordsN %>%
   unique() %>%
   group_by(id) %>%
   summarise(nWordUnqNS = n(),
-            nCharUnqWord = round(mean(wordLength), 2),
+            mCharUnqWord = round(mean(wordLength), 2),
             nCharUnqTotal = sum(wordLength),
             nShortUnqWordNS = sum(shortWord),
             nLongUnqWordNS = sum(longWord))
@@ -172,7 +171,7 @@ nWordNS <- wordsN %>%
          longWord = tile20 == 20) %>%
   group_by(id) %>%
   summarise(nWordNS = n(),
-            nCharWordNS = round(mean(wordLength), 2),
+            mCharWordNS = round(mean(wordLength), 2),
             nCharTotalNS = sum(wordLength),
             nShortWordNS = sum(shortWord),
             nLongWordNS = sum(longWord)) %>%

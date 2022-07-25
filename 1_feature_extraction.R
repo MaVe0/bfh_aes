@@ -10,6 +10,7 @@ library(hunspell)
 library(GGally)
 library(sjmisc)
 library(caret)
+library(LanguageToolR)
 
 # repeat POS tagging?
 rePOS <- FALSE
@@ -199,6 +200,37 @@ nIncorrect <- spellCheck %>%
 # }
 # suggestions <- hunspell_suggest(incorrectWords$word)
 # unnest(suggestions)
+
+# Grammar Check ########################################################################################################################
+test <- unnest_tokens(select(data, id, essay),
+                           output = "sentence",
+                           input = essay,
+                           token = "sentences",
+                      to_lower = FALSE)
+test <- test[1:12,]
+
+grammar <- data.frame(NULL)
+for(i in 1:nrow(test)) {
+  id <- pull(test[i, "id"])
+  text <- pull(test[i, "sentence"])
+  check <- LanguageToolR::languagetool(text)
+  check$id <- id
+  grammar <- rbind(grammar, check)
+}
+
+LanguageToolR::languagetool("Patience is when your waiting .
+                            ")
+
+
+LanguageToolR::languagetool(test)
+
+
+bla <- data.frame(NULL)
+for(i in 1:4){
+  y <- bla <- LanguageToolR::languagetool(test[i, "x"])
+  bla <- rbind(bla, y)
+}
+
 
 # POS tagging ##########################################################################################################################
 if(rePOS) {

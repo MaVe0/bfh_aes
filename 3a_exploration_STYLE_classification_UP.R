@@ -4,6 +4,16 @@ library(recipes)
 library(glmnet)
 library(rsample)
 library(caTools)
+library(ROSE)
+library(DMwR2)
+library(purrr)
+library(caTools)
+library(fastAdaboost)
+library(naivebayes)
+library(sjmisc)
+library(ranger)
+library(bnclassify)
+library(broom)
 set.seed(1898)
 
 # get conv scores
@@ -42,15 +52,55 @@ trainT <- predict(pp, newdata = select(train, -score))
 trainT$score <- train$score
 summary(trainT)
 
+################################################################################
+################################################################################
+
+# Try to define function with different models ´[glm, naive_bayes, tan] | ordinalRF takes very long!
+
+# train control (define for each model?)
+trControl <- trainControl(
+  method = 'repeatedcv',
+  number = 5,
+  repeats =  5,
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE,
+  verboseIter = TRUE,
+  search = 'random',
+  # sampling = 'rose'
+)
+
+# train
+model <- train(x = select(trainT, -score),
+               y = trainT$score,
+               method = 'ordinalRF',
+               trControl = trControl )
+
+
+testT$predScore <- predict(model, testT)
+
+testT <- mutate(testT,
+                correct = score == predScore
+)
+frq(testT$correct)
+
+
+
+
+
+
+
 # logistic regression
 
-trControl <- trainControl(method = 'repeatedcv',
-                          number = 5,
-                          repeats =  5,
-                          summaryFunction = twoClassSummary,
-                          classProbs = TRUE, # IMPORTANT!
-                          verboseIter = TRUE,
-                          search = 'random')
+trControl <- trainControl(
+  method = 'repeatedcv',
+  number = 5,
+  repeats =  5,
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE,
+  verboseIter = TRUE,
+  search = 'random',
+  sampling = 'rose'
+  )
 
 logit.CV <- train(x = select(trainT, -score), y = trainT$score,
                   method = 'glmnet',
